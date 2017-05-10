@@ -5,8 +5,8 @@
 #include <unistd.h>
 
 extern "C" {
-  #include "extApi.h"
-  #include "v_repLib.h"
+   #include "extApi.h"
+    #include "v_repLib.h"
 }
 
 int main(int argc, char *argv[])
@@ -17,16 +17,16 @@ int main(int argc, char *argv[])
         std::cout << "Failed to Connect" << std::endl;
         return 0;
     }
- 
     robot = new Robot(vrep, "Pioneer_p3dx");
 
-    for (int i=0; i<30000; ++i)
+    for (int i=0; i<3000; ++i)
     {
+        std::cout << "Here we go... " << i << std::endl;
+        if (i==4)
+            robot->initOdometry();
         robot->update();
         robot->writeGT();
-        //robot->writeSonars();
-        //if(i % 30 == 0)
-        robot->writePointsPerSonars();
+        robot->writeSonars();
         extApi_sleepMs(50);
     }
     vrep->disconnect();
