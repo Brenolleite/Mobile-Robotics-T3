@@ -31,10 +31,13 @@ public:
     double vLToDrive(double vLinear, double vAngular);
     void drive(double vLinear, double vAngular);
     void stop();
-    //------Métodos T2--------------------------
+    //------Métodos Adicionados--------------------------
     void updateOdom();
     std::vector<float> getOdometry();
     void initOdometry();
+    void polarErrorCalc(float poseAtual[3]); //Essa função só recebe uma pose para que a gente troque odometria por groundTruth
+    void goToGoal();
+
 private:
     const float L = 0.381;                                   // distance between wheels
     const float R = 0.0975;                                  // wheel radius
@@ -56,10 +59,18 @@ private:
     simxFloat robotLastPosition[3] = {0,0,0};                // last robot position
     float sonarReadings[NUM_SONARS];
 
-//---------------Privates T2---------------------
+//---------------Privates Adicionados---------------------
+    /* Ground Truth */
+    float robotPose[3] = {0,0,0};
+    float robotLastPose[3] = {0,0,0};
+
     /* Robot Odometry  */
     float odomPose[3] = {0,0,0};                    // current odometry based pose
     float odomLastPose[3] = {0,0,0};                // last odometry based pose
+
+    /*Robot Control*/
+    float polarError[3] = {0,0,0};
+    float goal[3] = {0,0,0};
     bool atGoal = false;
 
 

@@ -68,10 +68,11 @@ Robot::Robot(Simulator *sim, std::string name) {
 }
 
 void Robot::update() {
-    drive(10,5);
     updateSensors();
     updatePose();
     updateOdom();
+    polarErrorCalc(robotPose);
+    goToGoal();
 }
 
 //--------------------------------------Métodos T2----------------------------------------------------------------
@@ -127,6 +128,32 @@ void Robot::initOdometry()
     odomPose[1] = robotPosition[1];
     odomPose[2] = robotOrientation[2];
 }
+
+void Robot::polarErrorCalc(float poseAtual[])
+{
+    float alfa, beta, p, dx, dy;
+
+    dx = poseAtual[0] - goal[0];
+    dy = poseAtual[1] - goal[1];
+
+    p = sqrt(dx*dx + dy*dy);
+    alfa = - poseAtual[2] + atan2(dy,dx);
+    beta = - poseAtual[2] - alfa;
+
+    polarError[0] = p;
+    polarError[1] = alfa;
+    polarError[2] = beta;
+}
+
+void Robot::goToGoal()
+{
+    float v, w, kRho = 3, kAlfa = 8, kBeta= -1.5;
+    v = kRho*polarError[0];
+    w = kAlfa*polarError[1] + kBeta*polarError[2];
+    drive(v,w);
+}
+
+
 //--------------------------------------Fim Métodos T2------------------------------------------------------------
 
 void Robot::updateSensors()
@@ -169,9 +196,18 @@ void Robot::updatePose()
         robotLastPosition[i] = robotPosition[i];
     }
 
+    robotLastPose[0] = robotPosition[0];
+    robotLastPose[1] = robotPosition[1];
+    robotLastPose[2] = robotOrientation[2];
+
     /* Get the robot current position and orientation */
     sim->getObjectPosition(handle,robotPosition);
     sim->getObjectOrientation(handle,robotOrientation);
+
+    robotPose[0] = robotPosition[0];
+    robotPose[1] = robotPosition[1];
+    robotPose[2] = robotOrientation[2];
+
 }
 
 void Robot::writeGT() {
