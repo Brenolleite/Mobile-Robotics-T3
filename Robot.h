@@ -3,7 +3,7 @@
 
 #define NUM_SONARS  16
 #define LOG         1
-
+#define rSonar      0.0975
 #include <fstream>
 #include <iostream>
 #include "Simulator.h"
@@ -35,8 +35,9 @@ public:
     void updateOdom();
     std::vector<float> getOdometry();
     void initOdometry();
-    void polarErrorCalc(float poseAtual[3]); //Essa função só recebe uma pose para que a gente troque odometria por groundTruth
+    void polarErrorCalc(float poseAtual[3]); //Essa função só recebe uma pose para que a gente escolha odometria ou groundTruth
     void goToGoal();
+    void writePointsSonars(float position[3]);
 
 private:
     const float L = 0.381;                                   // distance between wheels
@@ -73,6 +74,7 @@ private:
     float goal[3] = {0,0,0};
     bool atGoal = false;
 
+    const int sonarAngles[8] = {90, 50, 30, 10, -10, -30, -50, -90};
 
 };
 

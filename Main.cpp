@@ -17,18 +17,21 @@ int main(int argc, char *argv[])
         std::cout << "Failed to Connect" << std::endl;
         return 0;
     }
+    vrep->setSynchronous();
+    vrep->startSimulation();
     robot = new Robot(vrep, "Pioneer_p3dx");
 
     for (int i=0; i<3000; ++i)
     {
         std::cout << "Here we go... " << i << std::endl;
-        if (i==4)
-            robot->initOdometry();
+        //if (i==4)
+          //  robot->initOdometry();
         robot->update();
         robot->writeGT();
         robot->writeSonars();
         extApi_sleepMs(50);
     }
+    vrep->stopSimulation();
     vrep->disconnect();
     exit(0);
 }

@@ -23,6 +23,9 @@ public:
     int getObjectOrientation(simxInt sensorHandle, float *coord);
     int getJointPosition(simxInt jointHandle, float *coord);
     int setJointTargetVelocity(simxInt jointHandle, float velocity);
+    void setSynchronous();
+    void startSimulation();
+    void stopSimulation();
 private:
     int id;
     int portNumber;

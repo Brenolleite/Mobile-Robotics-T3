@@ -23,6 +23,21 @@ void Simulator::disconnect()
         simxFinish(id);
 }
 
+void Simulator::setSynchronous()
+{
+    simxSynchronous(id,1);
+}
+
+void Simulator::startSimulation()
+{
+    simxStartSimulation(id,simx_opmode_oneshot);
+}
+
+void Simulator::stopSimulation()
+{
+    simxStopSimulation(id,1);
+}
+
 void Simulator::pause()
 {
     if (id != -1)
