@@ -105,9 +105,7 @@ void Robot::updateOdom()
     odomPose[2] = ((sr - sl))/L+ odomLastPose[2]; //theta
     odomPose[0] = odomLastPose[0] + s*cos(odomPose[2]); //x
     odomPose[1] = odomLastPose[1] + s*sin(odomPose[2]); //y
-
-    std::cout<<"Odometria: x = "<<odomPose[0]<<" y = "<<odomPose[1]<<" theta = "<<odomPose[2];
-    std::cout<<"\nReal: x = "<<robotPosition[0]<<" y = "<<robotPosition[1]<<" theta = "<<robotOrientation[2]<<std::endl;
+    std::cout<<odomPose[0];
 }
 
 std::vector<float> Robot::getOdometry()
@@ -133,8 +131,8 @@ void Robot::polarErrorCalc(float poseAtual[])
 {
     float alfa, beta, p, dx, dy;
 
-    dx = poseAtual[0] - goal[0];
-    dy = poseAtual[1] - goal[1];
+    dx = goal[0] - poseAtual[0];
+    dy = goal[1] - poseAtual[1];
 
     p = sqrt(dx*dx + dy*dy);
     alfa = - poseAtual[2] + atan2(dy,dx);
@@ -143,16 +141,40 @@ void Robot::polarErrorCalc(float poseAtual[])
     polarError[0] = p;
     polarError[1] = alfa;
     polarError[2] = beta;
+
+    //std::cout<<"p = "<<polarError[0]<<" alfa=  "<<polarError[1]<<" beta= "<<polarError[2];
 }
 
 void Robot::goToGoal()
 {
-    float v, w, kRho = 3, kAlfa = 8, kBeta= -1.5;
+    float v, w, kRho = 10, kAlfa = 20, kBeta= -3;
+
     v = kRho*polarError[0];
     w = kAlfa*polarError[1] + kBeta*polarError[2];
+    std::cout<<"Velocidade: "<<v<<"   Angular: "<<w;
     drive(v,w);
 }
 
+void Robot::writePointsSonars(float position[])
+{
+  float x, y;
+  if (LOG) {
+    FILE *data =  fopen("points.txt", "at");
+
+    if (data!=NULL){
+
+      for (int i=0; i<8; ++i){
+        if(sonarReadings[i] > 0){
+          x = position[0] + (sonarReadings[i] + rSonar) * cos(robotOrientation[2] + (sonarAngles[i]*M_PI)/180);
+          y = position[1] + (sonarReadings[i] + rSonar) * sin(robotOrientation[2] + (sonarAngles[i]*M_PI)/180);
+          fprintf(data, "%.4f \t %.4f \n", x, y);
+        }
+      }
+      fflush(data);
+      fclose(data);
+    }
+  }
+}
 
 //--------------------------------------Fim Métodos T2------------------------------------------------------------
 
