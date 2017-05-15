@@ -65,6 +65,8 @@ Robot::Robot(Simulator *sim, std::string name) {
     sim->getJointPosition(motorHandle[1],&encoder[1]);
     std::cout << encoder[0] << std::endl;
     std::cout << encoder[1] << std::endl;
+
+    estado = toGoal;
 }
 
 void Robot::update() {
@@ -72,7 +74,22 @@ void Robot::update() {
     updatePose();
     updateOdom();
     polarErrorCalc(robotPose);
-    goToGoal();
+    switch(estado)
+    {
+        case stand:
+           //  std::cout<<"Estou com preguiça...";
+             drive(0,0);
+             break;
+        case toGoal:
+           // std::cout<<"\nVamos para o objetivo!";
+            goToGoal();
+            break;
+        case wallfollow:
+            break;
+        case avoidFuzzy:
+            break;
+    }
+    checkRobotState();
 }
 
 //--------------------------------------Métodos T2----------------------------------------------------------------
@@ -147,12 +164,35 @@ void Robot::polarErrorCalc(float poseAtual[])
 
 void Robot::goToGoal()
 {
-    float v, w, kRho = 10, kAlfa = 20, kBeta= -3;
-
+    float v, w, kRho = 50, kAlfa = 100, kBeta= -5;
     v = kRho*polarError[0];
+    if(v>20)
+    {
+        v = 20;
+    }
     w = kAlfa*polarError[1] + kBeta*polarError[2];
-    std::cout<<"Velocidade: "<<v<<"   Angular: "<<w;
+    //std::cout<<"Velocidade: "<<v<<"   Angular: "<<w;
     drive(v,w);
+}
+
+void Robot::setRobotState(state e)
+{
+    estado = e;
+}
+
+void Robot::checkRobotState()
+{
+    if (polarError[0] < limiar)
+    {
+        std::cout<<"\nCheguei!";
+        atGoal = true;
+        setRobotState(stand);
+    }
+}
+
+bool Robot::obstaclesInWay()
+{
+    return false;
 }
 
 void Robot::writePointsSonars(float position[])

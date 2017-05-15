@@ -16,6 +16,8 @@ extern "C" {
    #include "v_repLib.h"
 }
 
+enum state {stand, toGoal, wallfollow, avoidFuzzy };
+
 class Robot
 {
 public:
@@ -37,8 +39,10 @@ public:
     void initOdometry();
     void polarErrorCalc(float poseAtual[3]); //Essa função só recebe uma pose para que a gente escolha odometria ou groundTruth
     void goToGoal();
+    void setRobotState(state e);
+    void checkRobotState();
+    bool obstaclesInWay();
     void writePointsSonars(float position[3]);
-
 private:
     const float L = 0.381;                                   // distance between wheels
     const float R = 0.0975;                                  // wheel radius
@@ -74,8 +78,12 @@ private:
     float goal[3] = {0,0,0};
     bool atGoal = false;
 
-    const int sonarAngles[8] = {90, 50, 30, 10, -10, -30, -50, -90};
+    /*Variável de estado*/
+    state estado = stand;
 
+    const int sonarAngles[8] = {90, 50, 30, 10, -10, -30, -50, -90};
+    const int minSonarValue = 0.2;
+    const float limiar = 0.05;
 };
 
 #endif // ROBOT_H
