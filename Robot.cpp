@@ -77,14 +77,13 @@ void Robot::update() {
     switch(estado)
     {
         case stand:
-           //  std::cout<<"Estou com preguiça...";
              drive(0,0);
              break;
         case toGoal:
-           // std::cout<<"\nVamos para o objetivo!";
             goToGoal();
             break;
         case wallfollow:
+            drive(0,20); // Só pra diferenciar nos testes.
             break;
         case avoidFuzzy:
             break;
@@ -184,15 +183,42 @@ void Robot::checkRobotState()
 {
     if (polarError[0] < limiar)
     {
-        std::cout<<"\nCheguei!";
+        std::cout<<"\nI made it to the goal!!\n";
         atGoal = true;
         setRobotState(stand);
+    }
+    else
+    {
+        atGoal = false;
+        if(obstaclesInWay() || estado == wallfollow)
+        {
+            std::cout<<"\nFollowing the wall...\n";
+            setRobotState(wallfollow);
+        }
+        else
+        {
+            setRobotState(toGoal);
+        }
     }
 }
 
 bool Robot::obstaclesInWay()
 {
-    return false;
+    float minValue;
+    minValue = std::min(std::min(sonarReadings[2],sonarReadings[3]),std::min(sonarReadings[2],sonarReadings[3]));
+    std::cout<<"\nMínimo: "<<minValue<<"\n";
+    if(minValue < minSonarValue && minValue >0.05)
+        return true;
+    else
+        return false;
+}
+
+void Robot::followTheWall()
+{
+    float minLeft, minRight, setPoint;
+    minLeft = sonarReadings[0];
+    minRight = sonarReadings[7];
+
 }
 
 void Robot::writePointsSonars(float position[])

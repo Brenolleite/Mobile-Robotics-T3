@@ -43,6 +43,7 @@ public:
     void checkRobotState();
     bool obstaclesInWay();
     void writePointsSonars(float position[3]);
+    void followTheWall();
 private:
     const float L = 0.381;                                   // distance between wheels
     const float R = 0.0975;                                  // wheel radius
@@ -82,8 +83,7 @@ private:
     state estado = stand;
 
     const int sonarAngles[8] = {90, 50, 30, 10, -10, -30, -50, -90};
-    const int minSonarValue = 0.2;
-    const float limiar = 0.05;
+    const float limiar = 0.05, minSonarValue = 0.35, minwfDistance = 0.4;
 };
 
 #endif // ROBOT_H
