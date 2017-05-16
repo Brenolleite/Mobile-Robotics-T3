@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include<vector>
+#include "fl/Headers.h"
 
 extern "C" {
    #include "extApi.h"
@@ -38,6 +39,8 @@ public:
     void polarErrorCalc(float poseAtual[3]); //Essa função só recebe uma pose para que a gente escolha odometria ou groundTruth
     void goToGoal();
     void writePointsSonars(float position[3]);
+    void fuzzyController();
+    void initFuzzyController();
 
 private:
     const float L = 0.381;                                   // distance between wheels
@@ -71,11 +74,15 @@ private:
 
     /*Robot Control*/
     float polarError[3] = {0,0,0};
-    float goal[3] = {0,0,0};
+    float goal[3] = {3.5,0,0};
     bool atGoal = false;
 
     const int sonarAngles[8] = {90, 50, 30, 10, -10, -30, -50, -90};
 
+    fl::Engine *engine = new fl::Engine;
+    fl::InputVariable *obstacle = new fl::InputVariable;
+    fl::OutputVariable *mSteer = new fl::OutputVariable;
+    fl::RuleBlock *mamdani = new fl::RuleBlock;
 };
 
 #endif // ROBOT_H

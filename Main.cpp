@@ -21,6 +21,9 @@ int main(int argc, char *argv[])
     vrep->startSimulation();
     robot = new Robot(vrep, "Pioneer_p3dx");
 
+    // Start Fuzzy controller to be used later
+    robot->initFuzzyController();
+    
     for (int i=0; i<3000; ++i)
     {
         std::cout << "Here we go... " << i << std::endl;
@@ -29,6 +32,7 @@ int main(int argc, char *argv[])
         robot->update();
         robot->writeGT();
         robot->writeSonars();
+        robot->fuzzyController();
         extApi_sleepMs(50);
     }
     vrep->stopSimulation();

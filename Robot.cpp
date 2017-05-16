@@ -176,6 +176,78 @@ void Robot::writePointsSonars(float position[])
   }
 }
 
+
+
+//-------------------------------------Fuzzy avoidObstacle--------------------------------------------------------
+
+void Robot::initFuzzyController(){
+  using namespace fl;
+  
+  engine->setName("ObstacleAvoidance");
+  engine->setDescription("");
+
+  obstacle->setName("obstacle");
+  obstacle->setDescription("");
+  obstacle->setEnabled(true);
+  obstacle->setRange(0.000, 1.000);
+  obstacle->setLockValueInRange(false);
+  obstacle->addTerm(new Ramp("left", 1.000, 0.000));
+  obstacle->addTerm(new Ramp("right", 0.000, 1.000));
+  engine->addInputVariable(obstacle);
+  
+  mSteer->setName("mSteer");
+  mSteer->setDescription("");
+  mSteer->setEnabled(true);
+  mSteer->setRange(0.000, 1.000);
+  mSteer->setLockValueInRange(false);
+  mSteer->setAggregation(new Maximum);
+  mSteer->setDefuzzifier(new Centroid(100));
+  mSteer->setDefaultValue(fl::nan);
+  mSteer->setLockPreviousValue(false);
+  mSteer->addTerm(new Ramp("left", 1.000, 0.000));
+  mSteer->addTerm(new Ramp("right", 0.000, 1.000));
+  engine->addOutputVariable(mSteer);
+
+  mSteer->setName("mSteer");
+  mSteer->setDescription("");
+  mSteer->setEnabled(true);
+  mSteer->setRange(0.000, 1.000);
+  mSteer->setLockValueInRange(false);
+  mSteer->setAggregation(new Maximum);
+  mSteer->setDefuzzifier(new Centroid(100));
+  mSteer->setDefaultValue(fl::nan);
+  mSteer->setLockPreviousValue(false);
+  mSteer->addTerm(new Ramp("left", 1.000, 0.000));
+  mSteer->addTerm(new Ramp("right", 0.000, 1.000));
+  engine->addOutputVariable(mSteer);
+  
+  mamdani->setName("mamdani");
+  mamdani->setDescription("");
+  mamdani->setEnabled(true);
+  mamdani->setConjunction(fl::null);
+  mamdani->setDisjunction(fl::null);
+  mamdani->setImplication(new AlgebraicProduct);
+  mamdani->setActivation(new General);
+  mamdani->addRule(Rule::parse("if obstacle is left then mSteer is right", engine));
+  mamdani->addRule(Rule::parse("if obstacle is right then mSteer is left", engine));
+  engine->addRuleBlock(mamdani);
+}
+
+void Robot::fuzzyController(){
+  using namespace fl;
+  
+  std::string status;
+  if (not engine->isReady(&status))
+    throw Exception("[engine error] engine is not ready:n" + status, FL_AT);
+  
+  scalar location = 1;
+  obstacle->setValue(location);
+  engine->process();
+  std::cout << "obstacle.input = " << Op::str(location) << 
+    " => " << "steer.output = " << Op::str(mSteer->getValue()) << std::endl;
+}
+//-------------------------------------End Fuzzy avoidObstacle--------------------------------------------------------
+
 //--------------------------------------Fim Métodos T2------------------------------------------------------------
 
 void Robot::updateSensors()

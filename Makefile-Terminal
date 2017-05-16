@@ -2,6 +2,8 @@
 
 VREP_FOLDER = <YOUR PATH TO VREP>
 
+FUZZY_LITE_FOLDER = <YOUR PATH TO FUZZY LITE>
+
 MAKEFILE      = Makefile
 
 ####### Compiler, tools and options
@@ -11,10 +13,10 @@ CXX           = g++
 DEFINES       = -DMAX_EXT_API_CONNECTIONS=255 -DNON_MATLAB_PARSING -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -m64 -pipe -g -Wall -W -D_REENTRANT -fPIE $(DEFINES)
 CXXFLAGS      = -m64 -pipe -g -Wall -W -D_REENTRANT -fPIE $(DEFINES)
-INCPATH       = -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64 I../../git/Mobile-Robotics-T2 -I	$(VREP_FOLDER)/programming/remoteApi -I	$(VREP_FOLDER)/programming/include -I	$(VREP_FOLDER)/programming/common -I/usr/include/qt5 -I/usr/include/qt5/QtWidgets -I/usr/include/qt5/QtGui -I/usr/include/qt5/QtCore -I. -I.
+INCPATH       = -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64 I../../git/Mobile-Robotics-T2 -I	$(VREP_FOLDER)/programming/remoteApi -I	$(VREP_FOLDER)/programming/include -I	$(VREP_FOLDER)/programming/common -I/usr/include/qt5 -I/usr/include/qt5/QtWidgets -I/usr/include/qt5/QtGui -I/usr/include/qt5/QtCore -I	$(FUZZY_LITE_FOLDER)/fuzzylite/ -I. -I.
 LINK          = g++
 LFLAGS        = -m64 -pthread
-LIBS          = $(SUBLIBS) -L/usr/X11R6/lib64 -ldl -lQt5Widgets -L/usr/lib/x86_64-linux-gnu -lQt5Gui -lQt5Core -lGL -lpthread 
+LIBS          = $(SUBLIBS) -L/usr/X11R6/lib64 -L$(FUZZY_LITE_FOLDER)/fuzzylite/release/bin -lfuzzylite -Wno-non-literal-null-conversion -ldl -lQt5Widgets -L/usr/lib/x86_64-linux-gnu -lQt5Gui -lQt5Core -lGL -lpthread 
 AR            = ar cqs
 RANLIB        = 
 QMAKE         = /usr/lib/x86_64-linux-gnu/qt5/bin/qmake
