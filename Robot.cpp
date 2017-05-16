@@ -207,19 +207,6 @@ void Robot::initFuzzyController(){
   mSteer->addTerm(new Ramp("left", 1.000, 0.000));
   mSteer->addTerm(new Ramp("right", 0.000, 1.000));
   engine->addOutputVariable(mSteer);
-
-  mSteer->setName("mSteer");
-  mSteer->setDescription("");
-  mSteer->setEnabled(true);
-  mSteer->setRange(0.000, 1.000);
-  mSteer->setLockValueInRange(false);
-  mSteer->setAggregation(new Maximum);
-  mSteer->setDefuzzifier(new Centroid(100));
-  mSteer->setDefaultValue(fl::nan);
-  mSteer->setLockPreviousValue(false);
-  mSteer->addTerm(new Ramp("left", 1.000, 0.000));
-  mSteer->addTerm(new Ramp("right", 0.000, 1.000));
-  engine->addOutputVariable(mSteer);
   
   mamdani->setName("mamdani");
   mamdani->setDescription("");
