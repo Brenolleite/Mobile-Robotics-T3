@@ -12,10 +12,13 @@
 #include<vector>
 #include "fl/Headers.h"
 
+
 extern "C" {
    #include "extApi.h"
    #include "v_repLib.h"
 }
+
+enum state {stand, toGoal, wallfollow, avoidFuzzy };
 
 class Robot
 {
@@ -38,9 +41,14 @@ public:
     void initOdometry();
     void polarErrorCalc(float poseAtual[3]); //Essa função só recebe uma pose para que a gente escolha odometria ou groundTruth
     void goToGoal();
+    void setRobotState(state e);
+    void checkRobotState();
+    bool obstaclesInWay();
     void writePointsSonars(float position[3]);
     void fuzzyController();
     void initFuzzyController();
+    void followTheWall();
+    float sonarMin(char lado);
 
 private:
     const float L = 0.381;                                   // distance between wheels
@@ -77,12 +85,16 @@ private:
     float goal[3] = {3.5,0,0};
     bool atGoal = false;
 
-    const int sonarAngles[8] = {90, 50, 30, 10, -10, -30, -50, -90};
-
+    /*Variável de estado*/
+    state estado = toGoal;
     fl::Engine *engine = new fl::Engine;
-    fl::InputVariable *obstacle = new fl::InputVariable;
-    fl::OutputVariable *mSteer = new fl::OutputVariable;
+    fl::InputVariable *sensorDir = new fl::InputVariable;
+    fl::InputVariable *sensorEsq = new fl::InputVariable;
+    fl::OutputVariable *vLinear = new fl::OutputVariable;
+    fl::OutputVariable *omega = new fl::OutputVariable;
     fl::RuleBlock *mamdani = new fl::RuleBlock;
+    const int sonarAngles[8] = {90, 50, 30, 10, -10, -30, -50, -90};
+    const float limiar = 0.05, minSonarValue = 0.7, minwfDistance = 0.4;
 };
 
 #endif // ROBOT_H

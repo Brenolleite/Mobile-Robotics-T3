@@ -65,6 +65,7 @@ Robot::Robot(Simulator *sim, std::string name) {
     sim->getJointPosition(motorHandle[1],&encoder[1]);
     std::cout << encoder[0] << std::endl;
     std::cout << encoder[1] << std::endl;
+
 }
 
 void Robot::update() {
@@ -72,7 +73,22 @@ void Robot::update() {
     updatePose();
     updateOdom();
     polarErrorCalc(robotPose);
-    goToGoal();
+    switch(estado)
+    {
+        case stand:
+             drive(0,0);
+             break;
+        case toGoal:
+            goToGoal();
+            break;
+        case wallfollow:
+            drive(0,20); // Só pra diferenciar nos testes.
+            break;
+        case avoidFuzzy:
+            fuzzyController();
+            break;
+    }
+    checkRobotState();
 }
 
 //--------------------------------------Métodos T2----------------------------------------------------------------
@@ -147,12 +163,60 @@ void Robot::polarErrorCalc(float poseAtual[])
 
 void Robot::goToGoal()
 {
-    float v, w, kRho = 10, kAlfa = 20, kBeta= -3;
-
+    float v, w, kRho = 50, kAlfa = 100, kBeta= -5;
     v = kRho*polarError[0];
+    if(v>20)
+    {
+        v = 20;
+    }
     w = kAlfa*polarError[1] + kBeta*polarError[2];
-    std::cout<<"Velocidade: "<<v<<"   Angular: "<<w;
+    //std::cout<<"Velocidade: "<<v<<"   Angular: "<<w;
     drive(v,w);
+}
+
+void Robot::setRobotState(state e)
+{
+    estado = e;
+}
+
+void Robot::checkRobotState()
+{
+    if (polarError[0] < limiar)
+    {
+        std::cout<<"\nI made it to the goal!!\n";
+        atGoal = true;
+        setRobotState(stand);
+    }
+    else
+    {
+        atGoal = false;
+        if(obstaclesInWay())
+        {
+           setRobotState(avoidFuzzy);
+        }
+        else
+        {
+            setRobotState(toGoal);
+        }
+    }
+}
+
+bool Robot::obstaclesInWay()
+{
+    return ((sonarReadings[2] < minSonarValue && sonarReadings[2] >= 0.05) ||
+            (sonarReadings[5] < minSonarValue && sonarReadings[5] >= 0.05) );
+}
+
+void Robot::followTheWall()
+{
+    float minLeft, minRight, setPoint;
+    minLeft = sonarReadings[0];
+    minRight = sonarReadings[7];
+   /* if (minLeft >= 0.05 && minLeft <= minRight)
+    {
+
+    }
+    else if (minRight >= 0.05 && )*/
 }
 
 void Robot::writePointsSonars(float position[])
@@ -183,40 +247,73 @@ void Robot::writePointsSonars(float position[])
 void Robot::initFuzzyController(){
   using namespace fl;
   
-  engine->setName("ObstacleAvoidance");
+  engine->setName("");
   engine->setDescription("");
 
-  obstacle->setName("obstacle");
-  obstacle->setDescription("");
-  obstacle->setEnabled(true);
-  obstacle->setRange(0.000, 1.000);
-  obstacle->setLockValueInRange(false);
-  obstacle->addTerm(new Ramp("left", 1.000, 0.000));
-  obstacle->addTerm(new Ramp("right", 0.000, 1.000));
-  engine->addInputVariable(obstacle);
+  sensorDir->setName("sensorDir");
+  sensorDir->setDescription("");
+  sensorDir->setEnabled(true);
+  sensorDir->setRange(0.000, 1.000);
+  sensorDir->setLockValueInRange(false);
+  sensorDir->addTerm(new Ramp("muitoPerto", 0.35, 0));
+  sensorDir->addTerm(new Triangle("perto", 0, 0.35, 0.7));
+  sensorDir->addTerm(new Trapezoid("longe",0.35, 0.7, 1, 1));
+  engine->addInputVariable(sensorDir);
   
-  mSteer->setName("mSteer");
-  mSteer->setDescription("");
-  mSteer->setEnabled(true);
-  mSteer->setRange(0.000, 1.000);
-  mSteer->setLockValueInRange(false);
-  mSteer->setAggregation(new Maximum);
-  mSteer->setDefuzzifier(new Centroid(100));
-  mSteer->setDefaultValue(fl::nan);
-  mSteer->setLockPreviousValue(false);
-  mSteer->addTerm(new Ramp("left", 1.000, 0.000));
-  mSteer->addTerm(new Ramp("right", 0.000, 1.000));
-  engine->addOutputVariable(mSteer);
+  sensorEsq->setName("sensorEsq");
+  sensorEsq->setDescription("");
+  sensorEsq->setEnabled(true);
+  sensorEsq->setRange(0.000, 1.000);
+  sensorEsq->setLockValueInRange(false);
+  sensorEsq->addTerm(new Ramp("muitoPerto", 0.35, 0));
+  sensorEsq->addTerm(new Triangle("perto", 0, 0.35, 0.7));
+  sensorEsq->addTerm(new Trapezoid("longe",0.35, 0.7, 1, 1));
+  engine->addInputVariable(sensorEsq);
+
+  omega->setName("omega");
+  omega->setDescription("");
+  omega->setEnabled(true);
+  omega->setRange(-50, 50);
+  omega->setLockValueInRange(false);
+  omega->setAggregation(new Maximum);
+  omega->setDefuzzifier(new Centroid(100));
+  omega->setDefaultValue(fl::nan);
+  omega->setLockPreviousValue(false);
+  omega->addTerm(new Trapezoid("maisDireita",-50, -50, -45, -20));
+  omega->addTerm(new Triangle("direita", -35, -17.5, 0));
+  omega->addTerm(new Triangle("zero", -15, 0, 15));
+  omega->addTerm(new Triangle("esquerda",  0, 17.5, 35));
+  omega->addTerm(new Trapezoid("maisEsquerda",20, 45, 50, 50));
+  engine->addOutputVariable(omega);
   
+  vLinear->setName("vLinear");
+  vLinear->setDescription("");
+  vLinear->setEnabled(true);
+  vLinear->setRange(0.000, 30);
+  vLinear->setLockValueInRange(false);
+  vLinear->setAggregation(new Maximum);
+  vLinear->setDefuzzifier(new Centroid(100));
+  vLinear->setDefaultValue(fl::nan);
+  vLinear->setLockPreviousValue(false);
+  vLinear->addTerm(new Ramp("devagar", 12.5, 0.000));
+  vLinear->addTerm(new Triangle("normal", 5, 12.5, 20));
+  vLinear->addTerm(new Triangle("rapido", 15, 22.5, 30));
+  engine->addOutputVariable(vLinear);
+
   mamdani->setName("mamdani");
   mamdani->setDescription("");
   mamdani->setEnabled(true);
-  mamdani->setConjunction(fl::null);
-  mamdani->setDisjunction(fl::null);
+  mamdani->setConjunction(new Minimum);
+  mamdani->setDisjunction(new Maximum);
   mamdani->setImplication(new AlgebraicProduct);
   mamdani->setActivation(new General);
-  mamdani->addRule(Rule::parse("if obstacle is left then mSteer is right", engine));
-  mamdani->addRule(Rule::parse("if obstacle is right then mSteer is left", engine));
+  mamdani->addRule(Rule::parse("if sensorDir is muitoPerto then omega is maisDireita and vLinear is devagar", engine));
+  mamdani->addRule(Rule::parse("if sensorDir is perto then omega is direita and vLinear is normal", engine));
+  mamdani->addRule(Rule::parse("if sensorDir is longe then omega is zero and vLinear is rapido", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is muitoPerto then omega is maisEsquerda and vLinear is devagar", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is perto then omega is esquerda and vLinear is normal", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is longe then omega is zero and vLinear is rapido", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is perto and sensorDir is perto then omega is maisEsquerda and vLinear is normal", engine));
   engine->addRuleBlock(mamdani);
 }
 
@@ -226,13 +323,14 @@ void Robot::fuzzyController(){
   std::string status;
   if (not engine->isReady(&status))
     throw Exception("[engine error] engine is not ready:n" + status, FL_AT);
-  
-  scalar location = 1;
-  obstacle->setValue(location);
+
+  sensorDir->setValue(sonarReadings[5]);
+  sensorEsq->setValue(sonarReadings[2]);
   engine->process();
-  std::cout << "obstacle.input = " << Op::str(location) << 
-    " => " << "steer.output = " << Op::str(mSteer->getValue()) << std::endl;
+
+  drive(vLinear->getValue(),omega->getValue());
 }
+
 //-------------------------------------End Fuzzy avoidObstacle--------------------------------------------------------
 
 //--------------------------------------Fim Métodos T2------------------------------------------------------------
