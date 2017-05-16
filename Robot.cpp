@@ -204,8 +204,12 @@ void Robot::checkRobotState()
 
 bool Robot::obstaclesInWay()
 {
-    float minValue;
-    minValue = std::min(std::min(sonarReadings[2],sonarReadings[3]),std::min(sonarReadings[2],sonarReadings[3]));
+    float minValue,m12,m34,m56,mAux;
+    m12 = std::min(sonarReadings[2],sonarReadings[3]);
+    m34 = std::min(sonarReadings[3],sonarReadings[4]);
+    m56 = std::min(sonarReadings[5],sonarReadings[6]);
+    mAux = std::min(m12,m34);
+    minValue = std::min(mAux,m56);
     std::cout<<"\nMínimo: "<<minValue<<"\n";
     if(minValue < minSonarValue && minValue >0.05)
         return true;
@@ -218,7 +222,11 @@ void Robot::followTheWall()
     float minLeft, minRight, setPoint;
     minLeft = sonarReadings[0];
     minRight = sonarReadings[7];
+    if (minLeft >= 0.05 && minLeft <= minRight)
+    {
 
+    }
+    else if (minRight >= 0.05 && )
 }
 
 void Robot::writePointsSonars(float position[])
