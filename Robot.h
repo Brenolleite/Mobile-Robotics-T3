@@ -29,6 +29,7 @@ public:
     void updatePose();
     void printPose();
     void writeGT();
+    void writeOdom();
     void writeSonars();
     void move(float vLeft, float vRight);
     double vRToDrive(double vLinear, double vAngular);
@@ -61,6 +62,7 @@ private:
     simxInt sonarHandle[16];                               // handle for sonars
     simxInt motorHandle[2] = {0,0};                        // [0]-> leftMotor [1]->rightMotor
     simxInt encoderHandle[2] = {0,0};
+    simxInt goalHandle;
     simxFloat encoder[2] = {0,0};
     simxFloat lastEncoder[2] = {0,0};
 
@@ -82,19 +84,23 @@ private:
 
     /*Robot Control*/
     float polarError[3] = {0,0,0};
-    float goal[3] = {3.5,0,0};
+    float goal[3] = {0,0,0};
     bool atGoal = false;
 
     /*Variável de estado*/
     state estado = toGoal;
+
+    /*Fuzzy*/
     fl::Engine *engine = new fl::Engine;
     fl::InputVariable *sensorDir = new fl::InputVariable;
     fl::InputVariable *sensorEsq = new fl::InputVariable;
     fl::OutputVariable *vLinear = new fl::OutputVariable;
     fl::OutputVariable *omega = new fl::OutputVariable;
     fl::RuleBlock *mamdani = new fl::RuleBlock;
+
+    /*Constantes*/
     const int sonarAngles[8] = {90, 50, 30, 10, -10, -30, -50, -90};
-    const float limiar = 0.05, minSonarValue = 0.7, minwfDistance = 0.4;
+    const float limiar = 0.05, minSonarValue = 0.8, minwfDistance = 0.4;
 };
 
 #endif // ROBOT_H

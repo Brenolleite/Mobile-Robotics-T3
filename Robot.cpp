@@ -66,6 +66,9 @@ Robot::Robot(Simulator *sim, std::string name) {
     std::cout << encoder[0] << std::endl;
     std::cout << encoder[1] << std::endl;
 
+    goalHandle = sim->getHandle("Dummy");
+    sim->getObjectPosition(goalHandle,goal);
+    goal[2] = 0;
 }
 
 void Robot::update() {
@@ -80,9 +83,6 @@ void Robot::update() {
              break;
         case toGoal:
             goToGoal();
-            break;
-        case wallfollow:
-            drive(0,20); // Só pra diferenciar nos testes.
             break;
         case avoidFuzzy:
             fuzzyController();
@@ -163,7 +163,7 @@ void Robot::polarErrorCalc(float poseAtual[])
 
 void Robot::goToGoal()
 {
-    float v, w, kRho = 50, kAlfa = 100, kBeta= -5;
+    float v, w, kRho = 30, kAlfa = 40, kBeta= -5;
     v = kRho*polarError[0];
     if(v>20)
     {
@@ -203,8 +203,13 @@ void Robot::checkRobotState()
 
 bool Robot::obstaclesInWay()
 {
-    return ((sonarReadings[2] < minSonarValue && sonarReadings[2] >= 0.05) ||
-            (sonarReadings[5] < minSonarValue && sonarReadings[5] >= 0.05) );
+    float min=1;
+    for(int i=1; i<7;i++)
+    {
+        if (sonarReadings[i]<minSonarValue && sonarReadings[i]>=0.05)
+            min = sonarReadings[i];
+    }
+    return (min < minSonarValue);
 }
 
 void Robot::followTheWall()
@@ -255,9 +260,9 @@ void Robot::initFuzzyController(){
   sensorDir->setEnabled(true);
   sensorDir->setRange(0.000, 1.000);
   sensorDir->setLockValueInRange(false);
-  sensorDir->addTerm(new Ramp("muitoPerto", 0.35, 0));
-  sensorDir->addTerm(new Triangle("perto", 0, 0.35, 0.7));
-  sensorDir->addTerm(new Trapezoid("longe",0.35, 0.7, 1, 1));
+  sensorDir->addTerm(new Ramp("muitoPerto", 0.25, 0));
+  sensorDir->addTerm(new Triangle("perto", 0.1, 0.25, 0.5));
+  sensorDir->addTerm(new Trapezoid("longe",0.5, 0.7, 1, 1));
   engine->addInputVariable(sensorDir);
   
   sensorEsq->setName("sensorEsq");
@@ -265,9 +270,9 @@ void Robot::initFuzzyController(){
   sensorEsq->setEnabled(true);
   sensorEsq->setRange(0.000, 1.000);
   sensorEsq->setLockValueInRange(false);
-  sensorEsq->addTerm(new Ramp("muitoPerto", 0.35, 0));
-  sensorEsq->addTerm(new Triangle("perto", 0, 0.35, 0.7));
-  sensorEsq->addTerm(new Trapezoid("longe",0.35, 0.7, 1, 1));
+  sensorEsq->addTerm(new Ramp("muitoPerto", 0.25, 0));
+  sensorEsq->addTerm(new Triangle("perto",  0.1, 0.25, 0.5));
+  sensorEsq->addTerm(new Trapezoid("longe",0.5, 0.7, 1, 1));
   engine->addInputVariable(sensorEsq);
 
   omega->setName("omega");
@@ -289,7 +294,7 @@ void Robot::initFuzzyController(){
   vLinear->setName("vLinear");
   vLinear->setDescription("");
   vLinear->setEnabled(true);
-  vLinear->setRange(0.000, 30);
+  vLinear->setRange(0, 30);
   vLinear->setLockValueInRange(false);
   vLinear->setAggregation(new Maximum);
   vLinear->setDefuzzifier(new Centroid(100));
@@ -307,13 +312,13 @@ void Robot::initFuzzyController(){
   mamdani->setDisjunction(new Maximum);
   mamdani->setImplication(new AlgebraicProduct);
   mamdani->setActivation(new General);
-  mamdani->addRule(Rule::parse("if sensorDir is muitoPerto then omega is maisDireita and vLinear is devagar", engine));
-  mamdani->addRule(Rule::parse("if sensorDir is perto then omega is direita and vLinear is normal", engine));
-  mamdani->addRule(Rule::parse("if sensorDir is longe then omega is zero and vLinear is rapido", engine));
-  mamdani->addRule(Rule::parse("if sensorEsq is muitoPerto then omega is maisEsquerda and vLinear is devagar", engine));
-  mamdani->addRule(Rule::parse("if sensorEsq is perto then omega is esquerda and vLinear is normal", engine));
-  mamdani->addRule(Rule::parse("if sensorEsq is longe then omega is zero and vLinear is rapido", engine));
-  mamdani->addRule(Rule::parse("if sensorEsq is perto and sensorDir is perto then omega is maisEsquerda and vLinear is normal", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is muitoPerto and sensorDir is not muitoPerto then omega is maisDireita and vLinear is devagar", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is not muitoPerto and sensorDir is muitoPerto then omega is maisEsquerda and vLinear is devagar", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is muitoPerto and sensorDir is muitoPerto then omega is maisEsquerda and vLinear is devagar", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is perto and sensorDir is perto then omega is esquerda and vLinear is normal", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is perto and sensorDir is longe then omega is esquerda and vLinear is normal", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is longe and sensorDir is perto then omega is direita and vLinear is normal", engine));
+  mamdani->addRule(Rule::parse("if sensorEsq is longe and sensorDir is longe then omega is zero and vLinear is rapido", engine));
   engine->addRuleBlock(mamdani);
 }
 
@@ -323,9 +328,12 @@ void Robot::fuzzyController(){
   std::string status;
   if (not engine->isReady(&status))
     throw Exception("[engine error] engine is not ready:n" + status, FL_AT);
+  float maxDir, maxEsq;
+  maxDir = std::max(sonarReadings[1],sonarReadings[2]);
+  maxEsq = std::max(sonarReadings[5],sonarReadings[6]);
 
-  sensorDir->setValue(sonarReadings[5]);
-  sensorEsq->setValue(sonarReadings[2]);
+  sensorDir->setValue(maxDir);
+  sensorEsq->setValue(maxEsq);
   engine->process();
 
   drive(vLinear->getValue(),omega->getValue());
@@ -382,6 +390,8 @@ void Robot::updatePose()
     /* Get the robot current position and orientation */
     sim->getObjectPosition(handle,robotPosition);
     sim->getObjectOrientation(handle,robotOrientation);
+    sim->getObjectPosition(goalHandle,goal);
+    goal[2]=0;
 
     robotPose[0] = robotPosition[0];
     robotPose[1] = robotPosition[1];
@@ -416,6 +426,29 @@ void Robot::writeGT() {
             std::cout << "Unable to open file";
     }
 }
+
+
+void Robot::writeOdom() {
+    /* write data to file */
+    /* file format: robotPosition[x] robotPosition[y] robotPosition[z] robotLastPosition[x] robotLastPosition[y] robotLastPosition[z]
+     *              encoder[0] encoder[1] lastEncoder[0] lastEncoder[1] */
+
+    if (LOG) {
+        FILE *data =  fopen("odomPose.txt", "at");
+        if (data!=NULL)
+        {
+            for (int i=0; i<2; ++i)
+                fprintf(data, "%.2f\t",robotPose[i]);
+            fprintf(data, "\n");
+            fflush(data);
+            fclose(data);
+          }
+          else
+            std::cout << "Unable to open file";
+    }
+}
+
+
 
 void Robot::writeSonars() {
     /* write data to file */
