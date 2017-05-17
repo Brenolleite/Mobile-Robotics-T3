@@ -121,7 +121,6 @@ void Robot::updateOdom()
     odomPose[2] = ((sr - sl))/L+ odomLastPose[2]; //theta
     odomPose[0] = odomLastPose[0] + s*cos(odomPose[2]); //x
     odomPose[1] = odomLastPose[1] + s*sin(odomPose[2]); //y
-    std::cout<<odomPose[0];
 }
 
 std::vector<float> Robot::getOdometry()
@@ -192,10 +191,12 @@ void Robot::checkRobotState()
         atGoal = false;
         if(obstaclesInWay())
         {
+           std::cout<<"\nI will get around it!\n";
            setRobotState(avoidFuzzy);
         }
         else
         {
+            std::cout<<"\nLet's go to my goal!\n";
             setRobotState(toGoal);
         }
     }
