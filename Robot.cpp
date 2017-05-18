@@ -262,8 +262,8 @@ void Robot::initFuzzyController(){
   sensorDir->setRange(0.000, 1.000);
   sensorDir->setLockValueInRange(false);
   sensorDir->addTerm(new Ramp("muitoPerto", 0.25, 0));
-  sensorDir->addTerm(new Triangle("perto", 0.1, 0.25, 0.5));
-  sensorDir->addTerm(new Trapezoid("longe",0.5, 0.7, 1, 1));
+  sensorDir->addTerm(new Triangle("perto", 0.1, 0.3, 0.5));
+  sensorDir->addTerm(new Trapezoid("longe",0.4, 0.7, 1, 1));
   engine->addInputVariable(sensorDir);
   
   sensorEsq->setName("sensorEsq");
@@ -272,8 +272,8 @@ void Robot::initFuzzyController(){
   sensorEsq->setRange(0.000, 1.000);
   sensorEsq->setLockValueInRange(false);
   sensorEsq->addTerm(new Ramp("muitoPerto", 0.25, 0));
-  sensorEsq->addTerm(new Triangle("perto",  0.1, 0.25, 0.5));
-  sensorEsq->addTerm(new Trapezoid("longe",0.5, 0.7, 1, 1));
+  sensorEsq->addTerm(new Triangle("perto",  0.1, 0.3, 0.5));
+  sensorEsq->addTerm(new Trapezoid("longe",0.4, 0.7, 1, 1));
   engine->addInputVariable(sensorEsq);
 
   omega->setName("omega");
@@ -301,7 +301,7 @@ void Robot::initFuzzyController(){
   vLinear->setDefuzzifier(new Centroid(100));
   vLinear->setDefaultValue(fl::nan);
   vLinear->setLockPreviousValue(false);
-  vLinear->addTerm(new Ramp("devagar", 12.5, 0.000));
+  vLinear->addTerm(new Ramp("devagar", 10, 0.000));
   vLinear->addTerm(new Triangle("normal", 5, 12.5, 20));
   vLinear->addTerm(new Triangle("rapido", 15, 22.5, 30));
   engine->addOutputVariable(vLinear);
